@@ -5,6 +5,7 @@ import (
 	"main/core/business"
 	"main/core/models"
 	"net/http"
+	"strconv"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/labstack/echo/v4"
@@ -47,7 +48,30 @@ func (r *UserRouter) Connect(s *core.Server) {
 	})
 
 	// [PUT] Input: Body (UserProfileUpdated)
+	r.g.PUT("/:id", func(c echo.Context) (err error) {
+		profile := new(models.UserProfileUpdated)
+		id, _ := strconv.Atoi(c.Param("id"))
+		if err = c.Bind(profile); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		if err = c.Validate(profile); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		err = user.Update(strconv.Itoa((id)), *profile)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
 
+		return c.JSON(http.StatusOK, id)
+	})
 	// [DELETE] Input user's id
+	r.g.DELETE("/:id", func(c echo.Context) (err error) {
+		id, _ := strconv.Atoi(c.Param("id"))
 
+		err = user.Delete(strconv.Itoa(id))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(http.StatusOK, id)
+	})
 }
